@@ -1,15 +1,16 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="script" default="nav_cloning_node.py"/>
+  <!-- <arg name="script" default="test.py"/> -->
   <arg name="mode" default="use_dl_output"/>
   <arg name="world_name" default="willow_garage.world"/>
   <arg name="map_file" default="willowgarage.yaml"/>
-  <arg name="waypoints_file" default="willow_loop.yaml"/>
+  <arg name="waypoints_file" default="willow_loop_waypoint_nav.yaml"/>
   <arg name="dist_err" default="0.8"/>
   <arg name="initial_pose_x" default="-10.78" />
   <arg name="initial_pose_y" default="-16.78" />
   <arg name="initial_pose_a" default="0.0" />
-  <arg name="use_waypoint_nav" default="false" />
+  <arg name="use_waypoint_nav" default="true" />
   <arg name="use_initpose" default="false" />
   <arg name="robot_x" default="0.0" />
   <arg name="robot_y" default="0.0" />
@@ -34,7 +35,7 @@
   </group>
 
   <node pkg="timed_roslaunch" type="timed_roslaunch.sh"
-        args="5 nav_cloning nav_cloning.launch script:=$(arg script)"
+        args="4 nav_cloning nav_cloning.launch script:=$(arg script)"
         name="timed_roslaunch" output="screen" />
 
   <node pkg="timed_roslaunch" type="timed_roslaunch.sh"
@@ -43,7 +44,7 @@
   </node>
 
   <node pkg="timed_roslaunch" type="timed_roslaunch.sh"
-        args="20 nav_cloning start_wp_nav.launch"
+        args="12 nav_cloning start_wp_nav.launch"
         name="timed_roslaunch3" >
   </node>
 </launch>

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 import roslib
 roslib.load_manifest('nav_cloning')
@@ -40,6 +40,7 @@ class nav_cloning_node:
         self.srv = rospy.Service('/training', SetBool, self.callback_dl_training)
         self.pose_sub = rospy.Subscriber("/amcl_pose", PoseWithCovarianceStamped, self.callback_pose)
         self.path_sub = rospy.Subscriber("/move_base/NavfnROS/plan", Path, self.callback_path)
+        self.waypoint_num = rospy.Subscriber("/count_waypoint", Int8, self.callback_waypoint)
         self.min_distance = 0.0
         self.action = 0.0
         self.episode = 0
@@ -52,14 +53,18 @@ class nav_cloning_node:
         self.select_dl = False
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
         self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_'+str(self.mode)+'/'
-        self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/'
+        self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/model'
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/model1.net'
+        self.model_num = 1
         self.previous_reset_time = 0
         self.pos_x = 0.0
         self.pos_y = 0.0
         self.pos_the = 0.0
         self.is_started = False
+        self.old_wp = 0
         self.start_time_s = rospy.get_time()
         os.makedirs(self.path + self.start_time)
+        # self.dl.load(self.load_path)
 
         with open(self.path + self.start_time + '/' +  'training.csv', 'w') as f:
             writer = csv.writer(f, lineterminator='\n')
@@ -115,6 +120,9 @@ class nav_cloning_node:
         resp.message = "Training: " + str(self.learning)
         resp.success = True
         return resp
+    
+    def callback_waypoint(self, data):
+        self.current_wp = data.data
 
     def loop(self):
         if self.cv_image.size != 640 * 480 * 3:
@@ -139,14 +147,18 @@ class nav_cloning_node:
         r, g, b = cv2.split(img_right)
         imgobj_right = np.asanyarray([r,g,b])
 
-        ros_time = str(rospy.Time.now())
+        if self.current_wp == 0 and self.old_wp == 11:
+            os.system('rosnode kill /my_bag')
+            self.dl.save(self.save_path + str(self.model_num) + '.net')
+            self.model_num += 1
+        self.old_wp = self.current_wp
 
-        if self.episode == 4000:
-            self.learning = False
-            self.dl.save(self.save_path)
-            #self.dl.load(self.load_path)
+        # if self.episode == 0:
+        #     self.learning = False
+            # self.dl.save(self.save_path)
+            # self.dl.load(self.load_path)
 
-        if self.episode == 6000:
+        if self.episode == 13000:
             os.system('killall roslaunch')
             sys.exit()
 

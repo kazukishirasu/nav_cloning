@@ -95,12 +95,12 @@ class deep_learning:
             return accuracy
 
     def save(self, save_path):
-        path = save_path + time.strftime("%Y%m%d_%H:%M:%S")
-        os.makedirs(path)
-        chainer.serializers.save_npz(path + '/model.net' , self.net)
+        # path = save_path + time.strftime("%Y%m%d_%H:%M:%S")
+        # os.makedirs(path)
+        chainer.serializers.save_npz(save_path, self.net)
 
     def load(self, load_path):
-        chainer.serializers.load_npz(load_path , self.net)
+        chainer.serializers.load_npz(load_path, self.net)
 
 if __name__ == '__main__':
         dl = deep_learning()

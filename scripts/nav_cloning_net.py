@@ -188,12 +188,15 @@ class deep_learning:
         accuracy = self.accuracy
         return accuracy
 
-    def save(self, save_path):
-        # <model save>
-        path = save_path + time.strftime("%Y%m%d_%H:%M:%S")
-        os.makedirs(path)
-        torch.save(self.net.state_dict(), path + '/model_gpu.pt')
+    # def save(self, save_path):
+    #     # <model save>
+    #     path = save_path + time.strftime("%Y%m%d_%H:%M:%S")
+    #     os.makedirs(path)
+    #     torch.save(self.net.state_dict(), path + '/model_gpu.pt')
 
+    def save(self, save_path):
+        torch.save(self.net.state_dict(), save_path)
+    
     def load(self, load_path):
         # <model load>
         self.net.load_state_dict(torch.load(load_path))

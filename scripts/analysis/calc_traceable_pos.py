@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 
 import os
@@ -21,13 +21,16 @@ from gazebo_msgs.srv import SetModelState
 class calc_traceable_pos:
     def __init__(self):
         rospy.init_node('calc_traceable_pos_node', anonymous=True)
-        self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/analysis/'
+        self.mode = rospy.get_param("/nav_cloning_node/mode", "use_dl_output")
+        # self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/analysis/'
+        self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_'+str(self.mode)+'/20221209_12:50:50/'
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.callback)
         self.pos_no = 0
         self.save_img_no = 0
         self.dl = deep_learning(n_action = 1)
-        self.load_path = self.path + 'model.net'
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/20221008_16:52:45/model8000.pt'
+        # self.load_path = self.path + 'model.net'
         self.dl.load(self.load_path)
         self.target_action = 0
         self.path_points=[]
@@ -43,9 +46,9 @@ class calc_traceable_pos:
                 im_resized = cv2.resize(self.cv_image, dsize=(64, 48))
                 cv2.imwrite(self.path+str(self.save_img_no)+".jpg", im_resized)
                 img = resize(self.cv_image, (48, 64), mode='constant')
-                r, g, b = cv2.split(img)
-                imgobj = np.asanyarray([r,g,b])
-                self.target_action = self.dl.act(imgobj)
+                # r, g, b = cv2.split(img)
+                # imgobj = np.asanyarray([r,g,b])
+                self.target_action = self.dl.act(img)
                 print(self.target_action)
                 self.save_img_no = self.pos_no
         except CvBridgeError as e:
@@ -68,7 +71,7 @@ class calc_traceable_pos:
             try:
                 set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
                 resp = set_state( self.state )
-            except rospy.ServiceException, e:
+            except rospy.ServiceException as e:
                 print("Service call failed: %s" % e)
             self.r.sleep()
             self.r.sleep()

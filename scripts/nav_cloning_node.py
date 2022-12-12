@@ -53,13 +53,15 @@ class nav_cloning_node:
         self.cv_image = np.zeros((480,640,3), np.uint8)
         self.cv_left_image = np.zeros((480,640,3), np.uint8)
         self.cv_right_image = np.zeros((480,640,3), np.uint8)
-        self.learning = True
+        self.learning = True 
         self.select_dl = False
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
         self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_'+str(self.mode)+'/'
         self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/'+str(self.start_time)+'/model'
-        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/20221008_18:30:46/model8000.pt'
-        self.dl.load(self.load_path)
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/20221008_16:52:45/model8000.pt'
+        if self.learning == False:
+            print(self.load_path)
+            self.dl.load(self.load_path)
         self.model_num = 1
         self.previous_reset_time = 0
         self.pos_x = 0.0
@@ -163,8 +165,8 @@ class nav_cloning_node:
         #img_right = np.asanyarray([r,g,b])
         ros_time = str(rospy.Time.now())
 
-        if self.episode == 0:
-            self.learning = False
+        # if self.episode == 0:
+        #     self.learning = False
         #     self.dl.save(self.save_path)
         #     self.dl.load(self.load_path)
 

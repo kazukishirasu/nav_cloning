@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 import roslib
 roslib.load_manifest('nav_cloning')
@@ -13,7 +13,7 @@ from PIL import Image
 
 def draw_traceable_pos():
     rospy.init_node('draw_traceable_pos_node', anonymous=True)
-    path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/analysis/'
+    path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_selected_training/20221209_12:50:50/'
     image = Image.open(roslib.packages.get_pkg_dir('nav_cloning')+'/maps/map.png').convert("L")
     arr = np.asarray(image)
     fig = pyplot.figure()

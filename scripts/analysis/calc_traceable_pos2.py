@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 
 import os
@@ -16,7 +16,7 @@ import math
 
 class calc_traceable_pos:
     def __init__(self):
-        self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/analysis/reverse/'
+        self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_use_dl_output/20221213_00:51:03/'
         self.pos_no = 0
         self.save_img_no = 0
         self.path_points=[]

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 import roslib
 roslib.load_manifest('nav_cloning')
@@ -28,11 +28,12 @@ import time
 import copy
 import tf
 from nav_msgs.msg import Odometry
+import numpy as np
 
 class nav_cloning_node:
     def __init__(self):
         rospy.init_node('nav_cloning_node', anonymous=True)
-        self.mode = rospy.get_param("/nav_cloning_node/mode", "change_dataset_balance")
+        self.mode = rospy.get_param("/nav_cloning_node/mode", "use_dl_output")
         self.action_num = 1
         self.dl = deep_learning(n_action = self.action_num)
         self.bridge = CvBridge()
@@ -48,8 +49,8 @@ class nav_cloning_node:
         self.cv_left_image = np.zeros((480,640,3), np.uint8)
         self.cv_right_image = np.zeros((480,640,3), np.uint8)
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
-        self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/analysis/'
-        self.load_path = '/home/kiyooka/Downloads/2-3_1/model_gpu.pt' #specify model
+        self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_use_dl_output/20221213_00:51:03/'
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_use_dl_output/20221213_00:51:03/model8000.pt'
         self.pos_x = 0.0
         self.pos_y = 0.0
         self.pos_the = 0.0
@@ -58,7 +59,7 @@ class nav_cloning_node:
         self.offset_ang = 0
         self.angle_reset_count = 0
         self.start_time_s = rospy.get_time()
-        os.makedirs(self.path + self.mode + "/" +   self.start_time)
+        os.makedirs(self.path + '/result/', exist_ok=True)
         self.gazebo_pos_sub = rospy.Subscriber("/gazebo/model_states", ModelStates, self.callback_gazebo_pos, queue_size = 2) 
         self.gazebo_pos_x = 0.0
         self.gazebo_pos_y = 0.0
@@ -78,7 +79,7 @@ class nav_cloning_node:
         self.score_list_sum = []
         self.collision_list = [[],[]]
         self.position_change_flag = False
-        with open(self.path + self.mode + "/" + 'path.csv', 'r') as f:
+        with open(self.path + '/path.csv', 'r') as f:
             is_first = True
             for row in csv.reader(f):
                 if is_first:
@@ -171,7 +172,7 @@ class nav_cloning_node:
 
     def first_move(self):
         flag = True
-        with open(self.path + self.mode + "/" + 'traceable_pos.csv', 'r') as f:
+        with open(self.path + '/traceable_pos.csv', 'r') as f:
             for row in csv.reader(f):
                 if flag:
                     str_x, str_y, str_angle = row
@@ -196,7 +197,7 @@ class nav_cloning_node:
            self.offset_ang = 10.0
         # position
         number = 0
-        with open(self.path + self.mode + "/" +  '/traceable_pos.csv', 'r') as f:
+        with open(self.path + '/traceable_pos.csv', 'r') as f:
             for row in csv.reader(f):
                 number += 1
                 if number == self.position_reset_count:
@@ -254,7 +255,7 @@ class nav_cloning_node:
             print("---traceable---")
             #---------- csv write -----------------
             line = [str(self.score_list), str(position_score)]
-            with open(self.path + self.mode + "/" + self.start_time + '/' + 'score.csv', 'a') as fl:
+            with open(self.path + 'result/score.csv', 'a') as fl:
                 writer = csv.writer(fl, lineterminator='\n')
                 writer.writerow(line)
             # score_list and position_score
@@ -304,7 +305,7 @@ class nav_cloning_node:
                 print(self.traceable_score_6)
 
                 line = [str(self.traceable_score_1/165), str(self.traceable_score_2/165), str(self.traceable_score_3/165), str(self.traceable_score_4/165),str(self.traceable_score_5/165),str(self.traceable_score_6/165)]
-                with open(self.path + self.mode + "/" + self.start_time + '/' + 'traceable.csv', 'a') as f:
+                with open(self.path + 'result/traceable.csv', 'a') as f:
                     writer = csv.writer(f, lineterminator='\n')
                     writer.writerow(line)
                 os.system('killall roslaunch')
@@ -354,7 +355,7 @@ class nav_cloning_node:
             self.vel.linear.x = 0.2
             self.vel.angular.z = target_action
         line_trajectory = [str(self.episode), str(self.gazebo_pos_x), str(self.gazebo_pos_y), str(self.move_count), str(collision_flag)]
-        with open(self.path + self.mode + "/" +  self.start_time + '/' + 'trajectory.csv', 'a') as f:
+        with open(self.path + 'result/trajectory.csv', 'a') as f:
             writer = csv.writer(f, lineterminator='\n')
             writer.writerow(line_trajectory)
 

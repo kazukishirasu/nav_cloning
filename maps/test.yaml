@@ -1,0 +1,56 @@
+waypoints:
+    point0:
+        x: -7.95867
+        y: -15.9924
+        z: -0.000251769
+        function: run
+    point1:
+        x: -0.810666
+        y: -16.1615
+        z: -0.000251769
+        function: run
+    point2:
+        x: 8.20647
+        y: -16.3356
+        z: -0.000249863
+        function: run
+    point3:
+        x: 13.6202
+        y: -16.4712
+        z: -0.000243187
+        function: run
+    point4:
+        x: 14.8332
+        y: -14.1348
+        z: -0.000244141
+        function: run
+    point5:
+        x: 11.8337
+        y: -10.4855
+        z: -0.00025177
+        function: run
+    point6:
+        x: 2.49226
+        y: -5.70328
+        z: -0.00024414
+        function: run
+    point7:
+        x: -2.10161
+        y: -4.29576
+        z: -0.000243187
+        function: run
+    point8:
+        x: -7.54693
+        y: -5.48652
+        z: -0.000245094
+        function: run
+    point8:
+        x: -9.60241
+        y: -9.42315
+        z: -0.000245094
+        function: run
+    point9:
+        x: -9.58882
+        y: -14.3755
+        z: 0
+        function: run

@@ -29,6 +29,8 @@ import copy
 import tf
 from nav_msgs.msg import Odometry
 import numpy as np
+import yaml
+from geometry_msgs.msg import PoseStamped
 
 class nav_cloning_node:
     def __init__(self):
@@ -49,7 +51,8 @@ class nav_cloning_node:
         self.cv_left_image = np.zeros((480,640,3), np.uint8)
         self.cv_right_image = np.zeros((480,640,3), np.uint8)
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
-        self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_use_dl_output/20221213_00:51:03/'
+        # self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_use_dl_output/20221213_00:51:03/'
+        self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_use_dl_output/test/'
         self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_use_dl_output/20221213_00:51:03/model8000.pt'
         self.pos_x = 0.0
         self.pos_y = 0.0
@@ -79,6 +82,13 @@ class nav_cloning_node:
         self.score_list_sum = []
         self.collision_list = [[],[]]
         self.position_change_flag = False
+        self.amcl_pose_pub = rospy.Publisher('initialpose', PoseWithCovarianceStamped, queue_size=1)
+        self.pos = PoseWithCovarianceStamped()
+        # self.simple_goal_pub = rospy.Publisher('move_base_simple/goal', PoseStamped, queue_size=10)
+        self.waypoints_file = "/home/kazuki/catkin_ws/src/nav_cloning/maps/test.yaml"
+        with open(self.waypoints_file, "r") as yml:
+            waypoint = yaml.safe_load(yml)
+        # print("first x:", str(waypoint["waypoints"]["point0"]["x"]))
         with open(self.path + '/path.csv', 'r') as f:
             is_first = True
             for row in csv.reader(f):
@@ -180,8 +190,22 @@ class nav_cloning_node:
                     the = the - 2.0 * math.pi if the >  math.pi else the
                     the = the + 2.0 * math.pi if the < -math.pi else the
                     self.robot_move(float(str_x),float(str_y),float(the))
+                    self.amcl_robot_moving(float(str_x),float(str_y),float(the))
                     print("robot_move_first")
                     flag = False
+    
+    def amcl_robot_moving(self, x, y, angle):
+        self.pos.header.stamp = rospy.Time.now()
+        self.pos.header.frame_id = 'map'
+        self.pos.pose.pose.position.x = x - 10.78
+        self.pos.pose.pose.position.y = y - 16.78
+        quaternion_ = tf.transformations.quaternion_from_euler(0, 0, angle)
+        self.pos.pose.pose.orientation.x = quaternion_[0]
+        self.pos.pose.pose.orientation.y = quaternion_[1]
+        self.pos.pose.pose.orientation.z = quaternion_[2]
+        self.pos.pose.pose.orientation.w = quaternion_[3]
+        # self.pos.pose.covariance = [0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853892326654787]
+        self.amcl_pose_pub.publish(self.pos)
 
     def calc_move_pos(self):
         # angle 
@@ -285,7 +309,7 @@ class nav_cloning_node:
         if self.episode > 5:
             collision_flag = self.collision()
 
-        if self.position_reset_count >= 1156:
+        if self.position_reset_count >= 897:
             self.is_finish = True
 
         if self.is_first:
@@ -304,7 +328,7 @@ class nav_cloning_node:
                 print(self.traceable_score_5)
                 print(self.traceable_score_6)
 
-                line = [str(self.traceable_score_1/165), str(self.traceable_score_2/165), str(self.traceable_score_3/165), str(self.traceable_score_4/165),str(self.traceable_score_5/165),str(self.traceable_score_6/165)]
+                line = [str(self.traceable_score_1/128), str(self.traceable_score_2/128), str(self.traceable_score_3/128), str(self.traceable_score_4/128),str(self.traceable_score_5/128),str(self.traceable_score_6/128)]
                 with open(self.path + 'result/traceable.csv', 'a') as f:
                     writer = csv.writer(f, lineterminator='\n')
                     writer.writerow(line)
@@ -328,6 +352,7 @@ class nav_cloning_node:
                 self.episode = 0
                 x,y,the = self.calc_move_pos()
                 self.robot_move(x,y,the)
+                self.amcl_robot_moving(x,y,the)
                 self.move_count += 1
 
 

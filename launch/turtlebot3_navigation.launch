@@ -36,7 +36,7 @@
     <arg name="cmd_vel_topic" value="/nav_vel"/>
   </include>
 
-  <!-- <group unless="$(arg use_waypoint_nav)">
+  <group unless="$(arg use_waypoint_nav)">
     <node name="waypoints_nav" pkg="fulanghua_waypoints_nav" type="waypoints_nav" output="screen">
       <param name="filename" value="$(arg waypoints_file)"/>
       <param name="dist_err" value="$(arg dist_err)"/>
@@ -48,7 +48,7 @@
       <param name="dist_err" value="$(arg dist_err)"/>
       <param name="max_update_rate" value="$(arg rate)"/>
       <param name="loop_flag" value="$(arg loop)"/>    </node>
-  </group> -->
+  </group>
 
   <!-- rviz -->
   <group if="$(arg open_rviz)"> 

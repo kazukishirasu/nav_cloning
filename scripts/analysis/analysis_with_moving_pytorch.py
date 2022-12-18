@@ -85,10 +85,6 @@ class nav_cloning_node:
         self.amcl_pose_pub = rospy.Publisher('initialpose', PoseWithCovarianceStamped, queue_size=1)
         self.pos = PoseWithCovarianceStamped()
         # self.simple_goal_pub = rospy.Publisher('move_base_simple/goal', PoseStamped, queue_size=10)
-        self.waypoints_file = "/home/kazuki/catkin_ws/src/nav_cloning/maps/test.yaml"
-        with open(self.waypoints_file, "r") as yml:
-            waypoint = yaml.safe_load(yml)
-        # print("first x:", str(waypoint["waypoints"]["point0"]["x"]))
         with open(self.path + '/path.csv', 'r') as f:
             is_first = True
             for row in csv.reader(f):
@@ -197,14 +193,13 @@ class nav_cloning_node:
     def amcl_robot_moving(self, x, y, angle):
         self.pos.header.stamp = rospy.Time.now()
         self.pos.header.frame_id = 'map'
-        self.pos.pose.pose.position.x = x - 10.78
-        self.pos.pose.pose.position.y = y - 16.78
+        self.pos.pose.pose.position.x = x - 11.0173539
+        self.pos.pose.pose.position.y = y - 16.7566943
         quaternion_ = tf.transformations.quaternion_from_euler(0, 0, angle)
         self.pos.pose.pose.orientation.x = quaternion_[0]
         self.pos.pose.pose.orientation.y = quaternion_[1]
         self.pos.pose.pose.orientation.z = quaternion_[2]
         self.pos.pose.pose.orientation.w = quaternion_[3]
-        # self.pos.pose.covariance = [0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853892326654787]
         self.amcl_pose_pub.publish(self.pos)
 
     def calc_move_pos(self):

@@ -43,6 +43,7 @@ class nav_cloning_node:
         self.image_left_sub = rospy.Subscriber("/camera_left/rgb/image_raw", Image, self.callback_left_camera)
         self.image_right_sub = rospy.Subscriber("/camera_right/rgb/image_raw", Image, self.callback_right_camera)
         self.nav_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        self.vel_sub = rospy.Subscriber("/nav_vel", Twist, self.callback_vel)
         self.srv = rospy.Service('/training', SetBool, self.callback_dl_training)
         self.min_distance = 0.0
         self.episode = 0
@@ -51,9 +52,9 @@ class nav_cloning_node:
         self.cv_left_image = np.zeros((480,640,3), np.uint8)
         self.cv_right_image = np.zeros((480,640,3), np.uint8)
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
-        # self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_use_dl_output/20221213_00:51:03/'
-        self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_use_dl_output/test/'
-        self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_use_dl_output/20221213_00:51:03/model8000.pt'
+        self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_selected_training/20221221_19:23:52/'
+        # self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_use_dl_output/test/'
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_selected_training/20221221_19:23:52/model8000.pt'
         self.pos_x = 0.0
         self.pos_y = 0.0
         self.pos_the = 0.0
@@ -84,7 +85,9 @@ class nav_cloning_node:
         self.position_change_flag = False
         self.amcl_pose_pub = rospy.Publisher('initialpose', PoseWithCovarianceStamped, queue_size=1)
         self.pos = PoseWithCovarianceStamped()
-        # self.simple_goal_pub = rospy.Publisher('move_base_simple/goal', PoseStamped, queue_size=10)
+        self.goal_pub = rospy.Publisher('move_base_simple/goal', PoseStamped, queue_size=10)
+        self.goal = PoseStamped()
+        self.pos_list = []
         with open(self.path + '/path.csv', 'r') as f:
             is_first = True
             for row in csv.reader(f):
@@ -94,6 +97,10 @@ class nav_cloning_node:
                 str_path_no, str_x, str_y = row
                 x, y = float(str_x), float(str_y)
                 self.path_points.append([x,y])
+
+        with open(self.path + '/traceable_pos.csv', 'r') as fs:
+            for row in fs:
+                self.pos_list.append(row)
 
     def callback(self, data):
         try:
@@ -112,6 +119,10 @@ class nav_cloning_node:
             self.cv_right_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
             print(e)
+    
+    def callback_vel(self, data):
+        self.vel = data
+        self.action = self.vel.angular.z
 
     def callback_gazebo_pos(self, data):
         self.gazebo_pos_x = data.pose[2].position.x
@@ -172,9 +183,9 @@ class nav_cloning_node:
             resp = set_state( state )
         except rospy.ServiceException as e:
             print("Service call failed: %s" % e)
-        # r.sleep() #need adjust
-        # r.sleep() #need adjust
-        # r.sleep() #need adjust
+        r.sleep() #need adjust
+        r.sleep() #need adjust
+        r.sleep() #need adjust
 
     def first_move(self):
         flag = True
@@ -189,6 +200,7 @@ class nav_cloning_node:
                     self.amcl_robot_moving(float(str_x),float(str_y),float(the))
                     print("robot_move_first")
                     flag = False
+        self.simple_goal(4)
     
     def amcl_robot_moving(self, x, y, angle):
         self.pos.header.stamp = rospy.Time.now()
@@ -201,6 +213,29 @@ class nav_cloning_node:
         self.pos.pose.pose.orientation.z = quaternion_[2]
         self.pos.pose.pose.orientation.w = quaternion_[3]
         self.amcl_pose_pub.publish(self.pos)
+        r.sleep() #need adjust
+        r.sleep() #need adjust
+        r.sleep() #need adjust
+
+    def simple_goal(self, position_reset_count):
+        list_num = position_reset_count + 140
+        if list_num <= len(self.pos_list):
+            self.goal_pos = self.pos_list[list_num]
+            simple_pos = self.goal_pos.split(',')
+            x = float(simple_pos[0])
+            y = float(simple_pos[1])
+            self.goal.header.stamp = rospy.Time.now()
+            self.goal.header.frame_id = 'map'
+            self.goal.pose.position.x = x - 11.0173539
+            self.goal.pose.position.y = y - 16.7566943
+            self.goal.pose.position.z = 0
+            self.goal.pose.orientation.x = 0 
+            self.goal.pose.orientation.y = 0
+            self.goal.pose.orientation.z = 0
+            self.goal.pose.orientation.w = 1.00
+            self.goal_pub.publish(self.goal)
+        else:
+            pass
 
     def calc_move_pos(self):
         # angle 
@@ -339,17 +374,17 @@ class nav_cloning_node:
                 print("angle_reset_count:" + str(self.angle_reset_count))
                 print("position_reset_count:" + str(self.position_reset_count))
 
-                if self.position_reset_count %7 == 4: # center position is pass
-                    self.position_reset_count += 1
-                    self.angle_reset_count = 0
-                    print("center_position")
-
                 self.episode = 0
                 x,y,the = self.calc_move_pos()
                 self.robot_move(x,y,the)
                 self.amcl_robot_moving(x,y,the)
                 self.move_count += 1
 
+                if self.position_reset_count %7 == 4: # center position is pass
+                    self.simple_goal(self.position_reset_count)
+                    self.position_reset_count += 1
+                    self.angle_reset_count = 0
+                    print("center_position")
 
                 # ------------------ num of reset -------------------
                 if self.angle_reset_count == 4:
@@ -374,7 +409,7 @@ class nav_cloning_node:
         else:
             self.vel.linear.x = 0.2
             self.vel.angular.z = target_action
-        line_trajectory = [str(self.episode), str(self.gazebo_pos_x), str(self.gazebo_pos_y), str(self.move_count), str(collision_flag)]
+        line_trajectory = [str(self.episode), str(self.gazebo_pos_x), str(self.gazebo_pos_y), str(self.move_count), str(collision_flag), str(self.action), str(self.vel.angular.z)]
         with open(self.path + 'result/trajectory.csv', 'a') as f:
             writer = csv.writer(f, lineterminator='\n')
             writer.writerow(line_trajectory)
@@ -384,10 +419,10 @@ class nav_cloning_node:
 
         temp = copy.deepcopy(img)
         cv2.imshow("Resized Image", temp)
-        temp = copy.deepcopy(img_left)
-        cv2.imshow("Resized Left Image", temp)
-        temp = copy.deepcopy(img_right)
-        cv2.imshow("Resized Right Image", temp)
+        # temp = copy.deepcopy(img_left)
+        # cv2.imshow("Resized Left Image", temp)
+        # temp = copy.deepcopy(img_right)
+        # cv2.imshow("Resized Right Image", temp)
         cv2.waitKey(1)
 
 if __name__ == '__main__':

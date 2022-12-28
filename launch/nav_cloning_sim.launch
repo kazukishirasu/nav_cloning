@@ -1,22 +1,24 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- <arg name="script" default="nav_cloning_node_pytorch.py"/> -->
-  <arg name="script" default="analysis_with_moving_pytorch.py"/>
+  <arg name="script" default="nav_cloning_node_pytorch.py"/>
+  <!-- <arg name="script" default="analysis_with_moving_pytorch.py"/> -->
   <!-- <arg name="mode" default="use_dl_output"/> -->
+  <arg name="num" default="1"/>
   <arg name="mode" default="selected_training"/>
   <arg name="world_name" default="willow_garage.world"/>
   <arg name="map_file" default="willowgarage.yaml"/>
   <arg name="waypoints_file" default="willow_loop_waypoint_nav.yaml"/>
   <arg name="dist_err" default="0.6"/>
-  <arg name="initial_pose_x" default="-10.78" />
-  <arg name="initial_pose_y" default="-16.78" />
+  <arg name="initial_pose_x" default="-9.5" />
+  <arg name="initial_pose_y" default="-16.0" />
   <arg name="initial_pose_a" default="0.0" />
   <arg name="use_waypoint_nav" default="true" />
   <arg name="use_initpose" default="false" />
-  <arg name="robot_x" default="0.0" />
-  <arg name="robot_y" default="0.0" />
+  <arg name="robot_x" default="1.5" />
+  <arg name="robot_y" default="0.7" />
   <arg name="robot_Y" default="0.0" />
   <rosparam param="/nav_cloning_node/mode" subst_value="True">$(arg mode)</rosparam>
+  <rosparam param="/nav_cloning_node/num" subst_value="True">$(arg num)</rosparam>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find nav_cloning)/world/$(arg world_name)"/> 
@@ -36,16 +38,16 @@
   </group>
 
   <node pkg="timed_roslaunch" type="timed_roslaunch.sh"
-        args="2 nav_cloning nav_cloning.launch script:=$(arg script)"
+        args="4 nav_cloning nav_cloning.launch script:=$(arg script)"
         name="timed_roslaunch" output="screen" />
 
   <node pkg="timed_roslaunch" type="timed_roslaunch.sh"
-        args="6 nav_cloning turtlebot3_navigation.launch model:=waffle map_file:=$(find nav_cloning)/maps/$(arg map_file) waypoints_file:=$(find nav_cloning)/maps/$(arg waypoints_file) dist_err:=$(arg dist_err) initial_pose_x:=$(arg initial_pose_x) initial_pose_y:=$(arg initial_pose_y) initial_pose_a:=$(arg initial_pose_a) use_waypoint_nav:=$(arg use_waypoint_nav)"
+        args="8 nav_cloning turtlebot3_navigation.launch model:=waffle map_file:=$(find nav_cloning)/maps/$(arg map_file) waypoints_file:=$(find nav_cloning)/maps/$(arg waypoints_file) dist_err:=$(arg dist_err) initial_pose_x:=$(arg initial_pose_x) initial_pose_y:=$(arg initial_pose_y) initial_pose_a:=$(arg initial_pose_a) use_waypoint_nav:=$(arg use_waypoint_nav)"
         name="timed_roslaunch2" >
   </node>
 
   <node pkg="timed_roslaunch" type="timed_roslaunch.sh"
-        args="10 nav_cloning start_wp_nav.launch"
+        args="12 nav_cloning start_wp_nav.launch"
         name="timed_roslaunch3" >
   </node>
 </launch>

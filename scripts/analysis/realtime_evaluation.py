@@ -4,13 +4,13 @@ from __future__ import print_function
 import roslib
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../")
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../pytorch")
 roslib.load_manifest('nav_cloning')
 import rospy
 import cv2
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-from nav_cloning_net import *
+from nav_cloning_pytorch import *
 from skimage.transform import resize
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseArray
@@ -25,11 +25,14 @@ import time
 import copy
 import tf
 from nav_msgs.msg import Odometry
+import numpy as np
+import csv
+import pathlib
 
 class nav_cloning_node:
     def __init__(self):
         rospy.init_node('nav_cloning_node', anonymous=True)
-        self.mode = rospy.get_param("/nav_cloning_node/mode", "use_dl_output")
+        self.mode = rospy.get_param("/nav_cloning_node/mode", "selected_training")
         self.action_num = 1
         self.dl = deep_learning(n_action = self.action_num)
         self.bridge = CvBridge()
@@ -42,26 +45,41 @@ class nav_cloning_node:
         self.vel = Twist()
         self.cv_image = np.zeros((480,640,3), np.uint8)
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
-        self.time = '/20221008_18:30:46/'
-        self.model_num = 1
-        self.threshold = 0.15
+        # self.time = '/20221008_18:30:46/'
+        #
+        arg = int(sys.argv[1])
+        if arg % 2 == 0:
+            self.dirnum = int(arg / 2)
+            self.model_num = 2
+        else:
+            self.dirnum = int(arg - int(arg / 2))
+            self.model_num = 1
+        #
+        # self.dirnum = 1
+        # self.model_num = 1
+        self.threshold = 0.3
         self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_'+str(self.mode)+'/'
         self.save_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_'+str(self.mode)+'/model1.net'
-        self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_'+str(self.mode + self.time)+'model'
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_'+str(self.mode)+'/thesis/'+str(self.dirnum)+'/model'
         self.image = cv2.imread(roslib.packages.get_pkg_dir('nav_cloning')+'/maps/willowgarage-refined.pgm')
         self.image_resize = cv2.resize(self.image, (600, 600))
-        self.img_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_image/'+str(self.mode)+'/'+str(self.time)+'/threshold_'+str(self.threshold)+'/'
+        self.img_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_image/'+str(self.mode)+'/thesis/'+str(self.dirnum)+'/threshold_'+str(self.threshold)+'/'
         self.srv = rospy.Service('/save_img', Trigger, self.callback_srv)
         self.start_time_s = rospy.get_time()
         self.pos_x = 0.0
         self.pos_y = 0.0
+        self.orientation_z = 0.0
+        self.orientation_w = 0.0
         self.old_pos_x = self.pos_x
         self.old_pos_y = self.pos_y
         self.count = 0
         self.flag = False
         # self.dl.load(self.load_path)
         self.dl.load(self.load_path + str(self.model_num) + '.pt')
+        print(self.load_path + str(self.model_num) + '.pt')
         os.makedirs(self.img_path, exist_ok=True)
+        touch_file = pathlib.Path(self.img_path + 'redpoint'+str(self.model_num)+'.csv')
+        touch_file.touch()
 
     def callback(self, data):
         try:
@@ -72,6 +90,8 @@ class nav_cloning_node:
     def callback_pose(self, data):
         self.pos_x = data.pose.pose.position.x
         self.pos_y = data.pose.pose.position.y
+        self.orientation_z = data.pose.pose.orientation.z
+        self.orientation_w = data.pose.pose.orientation.w
         self.vis_x = 205 + int(self.pos_x * 10.7)
         self.vis_y = 325 + int(self.pos_y * 13.4) * (-1)
         self.old_vis_x = 205 + int(self.old_pos_x * 10.7)
@@ -101,8 +121,8 @@ class nav_cloning_node:
             return
         img = resize(self.cv_image, (48, 64), mode='constant')
 
-        if self.episode == 10000:
-            os.system('killall roslaunch')
+        if self.episode == 1750:
+            cv2.imwrite(self.img_path + 'model' + str(self.model_num) + '.png', self.crop_img)
             sys.exit()
 
         target_action = self.dl.act(img)
@@ -116,6 +136,10 @@ class nav_cloning_node:
         if self.flag:
             if angle_error > self.threshold:
                 self.draw_circle(self.vis_x, self.vis_y)
+                self.redposition = [str(self.pos_x), str(self.pos_y), str(self.orientation_z), str(self.orientation_w)]
+                with open(self.img_path + 'redpoint'+str(self.model_num)+'.csv', 'a') as f:
+                    writer = csv.writer(f, lineterminator='\n')
+                    writer.writerow(self.redposition)
                 self.count += 1
             self.draw_line(self.vis_x, self.vis_y, self.old_vis_x, self.old_vis_y)
         self.crop_img = self.image_resize.copy()
@@ -130,10 +154,10 @@ class nav_cloning_node:
 
         if self.old_pos_x == self.pos_x:
             self.flag = False
-
+            
 if __name__ == '__main__':
     rg = nav_cloning_node()
-    DURATION = 0.2
+    DURATION = 0.1 #0.2
     r = rospy.Rate(1 / DURATION)
     while not rospy.is_shutdown():
         rg.loop()

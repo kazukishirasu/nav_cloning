@@ -52,7 +52,7 @@ class nav_cloning_node:
         self.cv_left_image = np.zeros((480,640,3), np.uint8)
         self.cv_right_image = np.zeros((480,640,3), np.uint8)
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
-        self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_selected_training/20221221_19:23:52/'
+        self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_selected_training/20221221_19:23:52/'
         # self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_use_dl_output/test/'
         self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_selected_training/20221221_19:23:52/model8000.pt'
         self.pos_x = 0.0

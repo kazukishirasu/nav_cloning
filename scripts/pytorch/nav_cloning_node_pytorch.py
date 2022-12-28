@@ -31,6 +31,7 @@ class nav_cloning_node:
     def __init__(self):
         rospy.init_node('nav_cloning_node', anonymous=True)
         self.mode = rospy.get_param("/nav_cloning_node/mode", "use_dl_output")
+        self.num = rospy.get_param("/nav_cloning_node/num", "1")
         print(self.mode)
         self.action_num = 1
         self.dl = deep_learning(n_action = self.action_num)
@@ -54,12 +55,15 @@ class nav_cloning_node:
         self.cv_image = np.zeros((480,640,3), np.uint8)
         self.cv_left_image = np.zeros((480,640,3), np.uint8)
         self.cv_right_image = np.zeros((480,640,3), np.uint8)
-        self.learning = True 
+        # self.learning = True
+        self.learning = True
         self.select_dl = False
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
-        self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_'+str(self.mode)+'/'
-        self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/'+str(self.start_time)+'/model'
-        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/20221008_16:52:45/model8000.pt'
+        self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_'+str(self.mode)+str(self.start_time)+'/'
+        self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+str(self.start_time)+'/'
+        # self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_'+str(self.mode)+'/thesis/'+str(self.num)+'/'
+        # self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/thesis/'+str(self.num)+'/'
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/thesis/1/model2.pt'
         if self.learning == False:
             print(self.load_path)
             self.dl.load(self.load_path)
@@ -72,12 +76,14 @@ class nav_cloning_node:
         self.lap = 0
         self.is_started = False
         self.start_time_s = rospy.get_time()
-        os.makedirs(self.path + self.start_time)
-        os.makedirs(roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/'+str(self.start_time))
+        os.makedirs(self.path, exist_ok=True)
+        os.makedirs(self.save_path, exist_ok=True)
+        # os.makedirs(self.path + self.start_time)
+        # os.makedirs(roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/'+str(self.start_time))
 
-        with open(self.path + self.start_time + '/' +  'training.csv', 'w') as f:
-            writer = csv.writer(f, lineterminator='\n')
-            writer.writerow(['step', 'mode', 'loss', 'angle_error(rad)', 'distance(m)','x(m)','y(m)', 'the(rad)', 'direction'])
+        # with open(self.path + 'training.csv', 'w') as f:
+        #     writer = csv.writer(f, lineterminator='\n')
+        #     writer.writerow(['step', 'mode', 'loss', 'angle_error(rad)', 'distance(m)','x(m)','y(m)', 'the(rad)', 'direction'])
         self.tracker_sub = rospy.Subscriber("/tracker", Odometry, self.callback_tracker)
 
     def callback(self, data):
@@ -170,17 +176,19 @@ class nav_cloning_node:
         #     self.learning = False
         #     self.dl.save(self.save_path)
         #     self.dl.load(self.load_path)
+        #     os.system('killall roslaunch')
+        #     sys.exit()
 
         if self.old_wp == 0 and self.current_wp == 1:
             self.lap += 1
             if self.lap > 1 and self.old_wp == 0 and self.current_wp == 1 and self.learning == True:
                 os.system('rosnode kill /my_bag')
-                self.dl.save(self.save_path + str(self.model_num) + '.pt')
+                self.dl.save(self.save_path + 'model' + str(self.model_num) + '.pt')
                 self.model_num += 1
         self.old_wp = self.current_wp
 
         if self.episode == 8000 and self.learning == True:
-            self.dl.save(self.save_path + str(self.episode) + '.pt')
+            self.dl.save(self.save_path + 'model' + str(self.episode) + '.pt')
             os.system('killall roslaunch')
             sys.exit()
 
@@ -259,7 +267,7 @@ class nav_cloning_node:
             print(f'{self.episode:05}' + ", training, loss:" + f'{loss:.010f}' + ", angle_error:" + f'{angle_error:.010f}' + ", distance:" + f'{distance:.010f}')
             self.episode += 1
             line = [str(self.episode), "training", str(loss), str(angle_error), str(distance), str(self.pos_x), str(self.pos_y), str(self.pos_the)  ]
-            with open(self.path + self.start_time + '/' + 'training.csv', 'a') as f:
+            with open(self.path + 'training.csv', 'a') as f:
                 writer = csv.writer(f, lineterminator='\n')
                 writer.writerow(line)
             self.vel.linear.x = 0.2
@@ -273,10 +281,10 @@ class nav_cloning_node:
 
             self.episode += 1
             angle_error = abs(self.action - target_action)
-            line = [str(self.episode), "test", "0", str(angle_error), str(distance), str(self.pos_x), str(self.pos_y), str(self.pos_the)  ]
-            with open(self.path + self.start_time + '/' + 'training.csv', 'a') as f:
-                writer = csv.writer(f, lineterminator='\n')
-                writer.writerow(line)
+            # line = [str(self.episode), "test", "0", str(angle_error), str(distance), str(self.pos_x), str(self.pos_y), str(self.pos_the)  ]
+            # with open(self.path + 'training.csv', 'a') as f:
+            #     writer = csv.writer(f, lineterminator='\n')
+            #     writer.writerow(line)
             self.vel.linear.x = 0.2
             self.vel.angular.z = target_action
             self.nav_pub.publish(self.vel)

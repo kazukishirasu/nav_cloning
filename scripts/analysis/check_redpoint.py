@@ -25,6 +25,7 @@ class nav_cloning_node:
     def __init__(self):
         rospy.init_node('nav_cloning_node', anonymous=True)
         self.mode = rospy.get_param("/nav_cloning_node/mode", "use_dl_output")
+        self.num = rospy.get_param("/nav_cloning_node/num", "1")
         self.action_num = 1
         self.dl = deep_learning(n_action = self.action_num)
         self.bridge = CvBridge()
@@ -42,10 +43,21 @@ class nav_cloning_node:
         self.cv_right_image = np.zeros((480,640,3), np.uint8)
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
         self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data'
-        self.result_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_image/selected_training/thesis/1/threshold_0.29'
-        self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_selected_training/thesis/1/model1.pt'
+        if self.num % 2 == 0:
+            self.dirnum = int(self.num / 2)
+            self.csv_num = 2
+        else:
+            self.dirnum = int(self.num - int(self.num / 2))
+            self.csv_num = 1
+        self.traceable = 'traceable'+str(self.csv_num)+'.csv'
+        self.trajectory = 'trajectory'+str(self.csv_num)+'.csv'
+        self.result_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_image/selected_training/thesis/'+str(self.dirnum)+'/threshold_0.29/result/'
+        self.redpoint = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_image/selected_training/thesis/'+str(self.dirnum)+'/threshold_0.29/redpoint'+str(self.csv_num)+'.csv'
+        print(self.redpoint)
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_selected_training/thesis/'+str(self.dirnum)+'/model'+str(self.csv_num)+'.pt'
+        print(self.load_path)
         self.start_time_s = rospy.get_time()
-        os.makedirs(self.result_path + '/result/', exist_ok=True)
+        os.makedirs(self.result_path, exist_ok=True)
         self.gazebo_pos_sub = rospy.Subscriber("/gazebo/model_states", ModelStates, self.callback_gazebo_pos, queue_size = 2) 
         self.gazebo_pos_x = 0.0
         self.gazebo_pos_y = 0.0
@@ -55,7 +67,7 @@ class nav_cloning_node:
         self.is_first = True
         self.start = False
         self.collision_list = [[],[]]
-        self.redpoint = []
+        self.redpoint_list = []
         with open(self.path + '/path.csv', 'r') as f:
             is_first = True
             for row in csv.reader(f):
@@ -65,6 +77,13 @@ class nav_cloning_node:
                 str_x, str_y = row
                 x, y = float(str_x), float(str_y)
                 self.path_points.append([x,y])
+
+        with open(self.redpoint, 'r') as f:
+            for row in csv.reader(f):
+                self.redpoint_list.append(row)
+        if not self.redpoint_list:
+            os.system('killall roslaunch')
+            sys.exit()
 
     def callback(self, data):
         try:
@@ -131,20 +150,16 @@ class nav_cloning_node:
 
 
     def robot_move(self, move_count): #reset
-        if self.is_first:
-            with open(self.result_path + '/redpoint1.csv', 'r') as f:
-                for row in csv.reader(f):
-                    self.redpoint.append(row)
         r = rospy.Rate(10)
         rospy.wait_for_service('/gazebo/set_model_state')
         state = ModelState()
         state.model_name = 'mobile_base'
-        state.pose.position.x = float(self.redpoint[move_count][0])
-        state.pose.position.y = float(self.redpoint[move_count][1])
+        state.pose.position.x = float(self.redpoint_list[move_count][0])
+        state.pose.position.y = float(self.redpoint_list[move_count][1])
         state.pose.orientation.x = 0
         state.pose.orientation.y = 0
-        state.pose.orientation.z = float(self.redpoint[move_count][2])
-        state.pose.orientation.w = float(self.redpoint[move_count][3])
+        state.pose.orientation.z = float(self.redpoint_list[move_count][2])
+        state.pose.orientation.w = float(self.redpoint_list[move_count][3])
         try:
             set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
             resp = set_state( state )
@@ -191,32 +206,33 @@ class nav_cloning_node:
         
         if self.is_first:
             self.first_move()
+            os.system('rosnode kill /rviz')
             return
 
         if self.episode > 500:
-            print("---------------------------------------------Success---------------------------------------------")
+            print("-----------------------------------Success-----------------------------------")
             line = ["Success"]
-            with open(self.result_path + '/result/traceable.csv', 'a') as f:
+            with open(self.result_path + self.traceable, 'a') as f:
                 writer = csv.writer(f, lineterminator='\n')
                 writer.writerow(line)
             self.collision_list = [[],[]]
             self.episode = 0
             self.move_count += 1
-            if self.move_count > len(self.redpoint):
+            if self.move_count > len(self.redpoint_list):
                 os.system('killall roslaunch')
                 sys.exit()
             self.robot_move(self.move_count-1)
 
         if collision_flag:
-            print("---------------------------------------------Failure---------------------------------------------")
+            print("-----------------------------------Failure-----------------------------------")
             line = ["Failure"]
-            with open(self.result_path + '/result/traceable.csv', 'a') as f:
+            with open(self.result_path + self.traceable, 'a') as f:
                 writer = csv.writer(f, lineterminator='\n')
                 writer.writerow(line)
             self.collision_list = [[],[]]
             self.episode = 0
             self.move_count += 1
-            if self.move_count > len(self.redpoint):
+            if self.move_count > len(self.redpoint_list):
                 os.system('killall roslaunch')
                 sys.exit()
             self.robot_move(self.move_count-1)
@@ -224,7 +240,7 @@ class nav_cloning_node:
 
         target_action = self.dl.act(img)
         print("episode:" +str(self.episode))
-        print("move_count:" +str(self.move_count))
+        print("move_count:" +str(self.move_count)+'/'+str(len(self.redpoint_list)))
         self.episode += 1
 
         if self.episode <= 5:
@@ -234,7 +250,7 @@ class nav_cloning_node:
             self.vel.linear.x = 0.2
             self.vel.angular.z = target_action
         line_trajectory = [str(self.episode), str(self.gazebo_pos_x), str(self.gazebo_pos_y), str(self.move_count), str(collision_flag)]
-        with open(self.result_path + '/result/trajectory.csv', 'a') as f:
+        with open(self.result_path + self.trajectory, 'a') as f:
             writer = csv.writer(f, lineterminator='\n')
             writer.writerow(line_trajectory)
 
@@ -243,10 +259,10 @@ class nav_cloning_node:
 
         temp = copy.deepcopy(img)
         cv2.imshow("Resized Image", temp)
-        temp = copy.deepcopy(img_left)
-        cv2.imshow("Resized Left Image", temp)
-        temp = copy.deepcopy(img_right)
-        cv2.imshow("Resized Right Image", temp)
+        # temp = copy.deepcopy(img_left)
+        # cv2.imshow("Resized Left Image", temp)
+        # temp = copy.deepcopy(img_right)
+        # cv2.imshow("Resized Right Image", temp)
         cv2.waitKey(1)
 
 if __name__ == '__main__':

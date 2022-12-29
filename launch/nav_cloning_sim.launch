@@ -19,7 +19,7 @@
   <arg name="robot_y" default="0.7" />
   <arg name="robot_Y" default="0.0" />
   <rosparam param="/nav_cloning_node/mode" subst_value="True">$(arg mode)</rosparam>
-  <!-- <rosparam param="/nav_cloning_node/num" subst_value="True">$(arg num)</rosparam> -->
+  <rosparam param="/nav_cloning_node/num" subst_value="True">$(arg num)</rosparam>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find nav_cloning)/world/$(arg world_name)"/> 

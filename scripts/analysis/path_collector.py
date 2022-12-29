@@ -17,23 +17,24 @@ class path_collector_node:
         self.path_no = 0
         self.vel_sub = rospy.Subscriber("/nav_vel", Twist, self.callback_vel)
         self.nav_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-        self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_use_dl_output/20221213_00:51:03/'
+        self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/'
         self.vel_angular = 0
         self.vel = Twist()
         os.makedirs(self.path, exist_ok=True)
-        with open(self.path +  'path.csv', 'w') as f:
-            writer = csv.writer(f, lineterminator='\n')
-            writer.writerow(['path_no', 'x(m)','y(m)'])
+        # with open(self.path +  'path.csv', 'w') as f:
+        #     writer = csv.writer(f, lineterminator='\n')
+        #     writer.writerow(['path_no', 'x(m)','y(m)'])
         self.pose_sub = rospy.Subscriber("/tracker", Odometry, self.callback_pose)
 
     def callback_pose(self, data):
         with open(self.path + 'path.csv', 'a') as f:
             x = data.pose.pose.position.x
             y = data.pose.pose.position.y
-            line = [str(self.path_no), str(x), str(y)]
+            line = [str(x), str(y)]
+            # line = [str(self.path_no), str(x), str(y)]
             writer = csv.writer(f, lineterminator='\n')
             writer.writerow(line)
-        self.path_no += 1
+        # self.path_no += 1
 
     def callback_vel(self, data):
         self.vel = data

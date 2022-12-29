@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="script" default="nav_cloning_node_pytorch.py"/>
+  <!-- <arg name="script" default="nav_cloning_node_pytorch.py"/> -->
   <!-- <arg name="script" default="analysis_with_moving_pytorch.py"/> -->
+  <arg name="script" default="check_redpoint.py"/>
   <!-- <arg name="mode" default="use_dl_output"/> -->
-  <arg name="num" default="1"/>
   <arg name="mode" default="selected_training"/>
+  <arg name="num" default="1"/>
   <arg name="world_name" default="willow_garage.world"/>
   <arg name="map_file" default="willowgarage.yaml"/>
   <arg name="waypoints_file" default="willow_loop_waypoint_nav.yaml"/>
@@ -18,7 +19,7 @@
   <arg name="robot_y" default="0.7" />
   <arg name="robot_Y" default="0.0" />
   <rosparam param="/nav_cloning_node/mode" subst_value="True">$(arg mode)</rosparam>
-  <rosparam param="/nav_cloning_node/num" subst_value="True">$(arg num)</rosparam>
+  <!-- <rosparam param="/nav_cloning_node/num" subst_value="True">$(arg num)</rosparam> -->
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find nav_cloning)/world/$(arg world_name)"/> 

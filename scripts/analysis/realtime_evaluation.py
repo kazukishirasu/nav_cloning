@@ -40,6 +40,7 @@ class nav_cloning_node:
         self.vel_sub = rospy.Subscriber("/nav_vel", Twist, self.callback_vel)
         self.pose_sub = rospy.Subscriber("/amcl_pose", PoseWithCovarianceStamped, self.callback_pose)
         self.nav_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+        self.gazebo_pose = rospy.Subscriber("/tracker", Odometry, self.callback_gazebo_pose)
         self.action = 0.0
         self.episode = 0
         self.vel = Twist()
@@ -57,7 +58,7 @@ class nav_cloning_node:
         #
         # self.dirnum = 1
         # self.model_num = 1
-        self.threshold = 0.3
+        self.threshold = 0.31
         self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_'+str(self.mode)+'/'
         self.save_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_'+str(self.mode)+'/model1.net'
         self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_'+str(self.mode)+'/thesis/'+str(self.dirnum)+'/model'
@@ -70,6 +71,10 @@ class nav_cloning_node:
         self.pos_y = 0.0
         self.orientation_z = 0.0
         self.orientation_w = 0.0
+        self.gazebo_pos_x = 0.0
+        self.gazebo_pos_y = 0.0
+        self.gazebo_orientation_z = 0.0
+        self.gazebo_orientation_w = 0.0
         self.old_pos_x = self.pos_x
         self.old_pos_y = self.pos_y
         self.count = 0
@@ -102,6 +107,12 @@ class nav_cloning_node:
     def callback_vel(self, data):
         self.vel = data
         self.action = self.vel.angular.z
+    
+    def callback_gazebo_pose(self, data):
+        self.gazebo_pos_x = data.pose.pose.position.x
+        self.gazebo_pos_y = data.pose.pose.position.y
+        self.gazebo_orientation_z = data.pose.pose.orientation.z
+        self.gazebo_orientation_w = data.pose.pose.orientation.w
     
     def draw_circle(self, vis_x, vis_y):
         cv2.circle(self.image_resize, (vis_x, vis_y), 3, (0, 0, 255), thickness = 3)
@@ -136,7 +147,8 @@ class nav_cloning_node:
         if self.flag:
             if angle_error > self.threshold:
                 self.draw_circle(self.vis_x, self.vis_y)
-                self.redposition = [str(self.pos_x), str(self.pos_y), str(self.orientation_z), str(self.orientation_w)]
+                # self.redposition = [str(self.pos_x), str(self.pos_y), str(self.orientation_z), str(self.orientation_w)]
+                self.redposition = [str(self.gazebo_pos_x), str(self.gazebo_pos_y), str(self.gazebo_orientation_z), str(self.gazebo_orientation_w)]
                 with open(self.img_path + 'redpoint'+str(self.model_num)+'.csv', 'a') as f:
                     writer = csv.writer(f, lineterminator='\n')
                     writer.writerow(self.redposition)

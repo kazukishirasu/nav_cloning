@@ -59,11 +59,11 @@ class nav_cloning_node:
         self.learning = True
         self.select_dl = False
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
-        self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_'+str(self.mode)+str(self.start_time)+'/'
-        self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+str(self.start_time)+'/'
-        # self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_'+str(self.mode)+'/thesis/'+str(self.num)+'/'
-        # self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/thesis/'+str(self.num)+'/'
-        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/thesis/1/model2.pt'
+        # self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_'+str(self.mode)+'/'+str(self.start_time)+'/'
+        # self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/'+str(self.start_time)+'/'
+        self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_'+str(self.mode)+'/thesis/'+str(self.num)+'/'
+        self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/thesis/'+str(self.num)+'/'
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/thesis/1/model1.pt'
         if self.learning == False:
             print(self.load_path)
             self.dl.load(self.load_path)
@@ -81,9 +81,9 @@ class nav_cloning_node:
         # os.makedirs(self.path + self.start_time)
         # os.makedirs(roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_'+str(self.mode)+'/'+str(self.start_time))
 
-        # with open(self.path + 'training.csv', 'w') as f:
-        #     writer = csv.writer(f, lineterminator='\n')
-        #     writer.writerow(['step', 'mode', 'loss', 'angle_error(rad)', 'distance(m)','x(m)','y(m)', 'the(rad)', 'direction'])
+        with open(self.path + 'training.csv', 'w') as f:
+            writer = csv.writer(f, lineterminator='\n')
+            writer.writerow(['step', 'mode', 'loss', 'angle_error(rad)', 'distance(m)','x(m)','y(m)', 'the(rad)', 'direction'])
         self.tracker_sub = rospy.Subscriber("/tracker", Odometry, self.callback_tracker)
 
     def callback(self, data):
@@ -185,12 +185,15 @@ class nav_cloning_node:
                 os.system('rosnode kill /my_bag')
                 self.dl.save(self.save_path + 'model' + str(self.model_num) + '.pt')
                 self.model_num += 1
+                if self.model_num > 4:
+                    os.system('killall roslaunch')
+                    sys.exit()
         self.old_wp = self.current_wp
 
-        if self.episode == 8000 and self.learning == True:
-            self.dl.save(self.save_path + 'model' + str(self.episode) + '.pt')
-            os.system('killall roslaunch')
-            sys.exit()
+        # if self.episode == 8000 and self.learning == True:
+        #     self.dl.save(self.save_path + 'model' + str(self.episode) + '.pt')
+        #     os.system('killall roslaunch')
+        #     sys.exit()
 
         if self.learning:
             target_action = self.action
@@ -281,10 +284,10 @@ class nav_cloning_node:
 
             self.episode += 1
             angle_error = abs(self.action - target_action)
-            # line = [str(self.episode), "test", "0", str(angle_error), str(distance), str(self.pos_x), str(self.pos_y), str(self.pos_the)  ]
-            # with open(self.path + 'training.csv', 'a') as f:
-            #     writer = csv.writer(f, lineterminator='\n')
-            #     writer.writerow(line)
+            line = [str(self.episode), "test", "0", str(angle_error), str(distance), str(self.pos_x), str(self.pos_y), str(self.pos_the)  ]
+            with open(self.path + 'training.csv', 'a') as f:
+                writer = csv.writer(f, lineterminator='\n')
+                writer.writerow(line)
             self.vel.linear.x = 0.2
             self.vel.angular.z = target_action
             self.nav_pub.publish(self.vel)

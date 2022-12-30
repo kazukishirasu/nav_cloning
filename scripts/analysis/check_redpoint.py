@@ -49,10 +49,11 @@ class nav_cloning_node:
         else:
             self.dirnum = int(self.num - int(self.num / 2))
             self.csv_num = 1
+        self.threshold = 'threshold_0.2'
         self.traceable = 'traceable'+str(self.csv_num)+'.csv'
         self.trajectory = 'trajectory'+str(self.csv_num)+'.csv'
-        self.result_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_image/selected_training/thesis/'+str(self.dirnum)+'/threshold_0.29/result/'
-        self.redpoint = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_image/selected_training/thesis/'+str(self.dirnum)+'/threshold_0.29/redpoint'+str(self.csv_num)+'.csv'
+        self.result_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_image/selected_training/thesis/'+str(self.dirnum)+'/'+str(self.threshold)+'/result/'
+        self.redpoint = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_image/selected_training/thesis/'+str(self.dirnum)+'/'+str(self.threshold)+'/redpoint'+str(self.csv_num)+'.csv'
         print(self.redpoint)
         self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_selected_training/thesis/'+str(self.dirnum)+'/model'+str(self.csv_num)+'.pt'
         print(self.load_path)
@@ -209,9 +210,23 @@ class nav_cloning_node:
             os.system('rosnode kill /rviz')
             return
 
-        if self.episode > 500:
+        if self.episode > 500 and self.min_distance <= 0.3:
             print("-----------------------------------Success-----------------------------------")
             line = ["Success"]
+            with open(self.result_path + self.traceable, 'a') as f:
+                writer = csv.writer(f, lineterminator='\n')
+                writer.writerow(line)
+            self.collision_list = [[],[]]
+            self.episode = 0
+            self.move_count += 1
+            if self.move_count > len(self.redpoint_list):
+                os.system('killall roslaunch')
+                sys.exit()
+            self.robot_move(self.move_count-1)
+
+        elif self.episode > 500 and self.min_distance > 0.3:
+            print("-----------------------------------Failure-----------------------------------")
+            line = ["Failure"]
             with open(self.result_path + self.traceable, 'a') as f:
                 writer = csv.writer(f, lineterminator='\n')
                 writer.writerow(line)

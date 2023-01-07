@@ -50,15 +50,17 @@ class nav_cloning_node:
         #
         arg = int(sys.argv[1])
         if arg % 2 == 0:
-            self.dirnum = int(arg / 2)
-            self.model_num = 2
+            if arg % 4 == 0:
+                self.model_num = 4
+            else:
+                self.model_num = 2
         else:
-            self.dirnum = int(arg - int(arg / 2))
-            self.model_num = 1
+            self.model_num = arg - (int(arg / 4) * 4)
+        self.dirnum = sys.argv[2]
         #
         # self.dirnum = 1
         # self.model_num = 1
-        self.threshold = 0.31
+        self.threshold = 0.25
         self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_'+str(self.mode)+'/'
         self.save_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_'+str(self.mode)+'/model1.net'
         self.load_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/model_'+str(self.mode)+'/thesis/'+str(self.dirnum)+'/model'

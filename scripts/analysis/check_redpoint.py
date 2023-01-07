@@ -43,13 +43,21 @@ class nav_cloning_node:
         self.cv_right_image = np.zeros((480,640,3), np.uint8)
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
         self.path = roslib.packages.get_pkg_dir('nav_cloning')+'/data'
+        # if self.num % 2 == 0:
+        #     self.dirnum = int(self.num / 2)
+        #     self.csv_num = 2
+        # else:
+        #     self.dirnum = int(self.num - int(self.num / 2))
+        #     self.csv_num = 1
         if self.num % 2 == 0:
-            self.dirnum = int(self.num / 2)
-            self.csv_num = 2
+            if self.num % 4 == 0:
+                self.csv_num = 4
+            else:
+                self.csv_num = 2
         else:
-            self.dirnum = int(self.num - int(self.num / 2))
-            self.csv_num = 1
-        self.threshold = 'threshold_0.2'
+            self.csv_num = self.num - (int(self.num / 4) * 4)
+        self.dirnum = int((self.num + 4 - 1) / 4)
+        self.threshold = 'threshold_0.25'
         self.traceable = 'traceable'+str(self.csv_num)+'.csv'
         self.trajectory = 'trajectory'+str(self.csv_num)+'.csv'
         self.result_path = roslib.packages.get_pkg_dir('nav_cloning')+'/data/result_image/selected_training/thesis/'+str(self.dirnum)+'/'+str(self.threshold)+'/result/'

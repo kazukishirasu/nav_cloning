@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- <arg name="script" default="nav_cloning_node_pytorch.py"/> -->
+  <arg name="script" default="nav_cloning_node_pytorch.py"/>
   <!-- <arg name="script" default="analysis_with_moving_pytorch.py"/> -->
-  <arg name="script" default="check_redpoint.py"/>
+  <!-- <arg name="script" default="check_redpoint.py"/> -->
+  <!-- <arg name="script" default="nav_cloning_test_mode.py"/> -->
   <!-- <arg name="mode" default="use_dl_output"/> -->
   <arg name="mode" default="selected_training"/>
   <arg name="num" default="1"/>

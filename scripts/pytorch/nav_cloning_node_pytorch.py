@@ -294,10 +294,10 @@ class nav_cloning_node:
 
         temp = copy.deepcopy(img)
         cv2.imshow("Resized Image", temp)
-        temp = copy.deepcopy(img_left)
-        cv2.imshow("Resized Left Image", temp)
-        temp = copy.deepcopy(img_right)
-        cv2.imshow("Resized Right Image", temp)
+        # temp = copy.deepcopy(img_left)
+        # cv2.imshow("Resized Left Image", temp)
+        # temp = copy.deepcopy(img_right)
+        # cv2.imshow("Resized Right Image", temp)
         cv2.waitKey(1)
 
 if __name__ == '__main__':

@@ -6,19 +6,29 @@
   <!-- <arg name="script" default="nav_cloning_test_mode.py"/> -->
   <!-- <arg name="mode" default="use_dl_output"/> -->
   <arg name="mode" default="selected_training"/>
+  <!-- <arg name="mode" default="follow_line"/> -->
   <arg name="num" default="1"/>
   <arg name="world_name" default="willow_garage.world"/>
+  <!-- <arg name="world_name" default="Tsudanuma_2-3.world"/> -->
   <arg name="map_file" default="willowgarage.yaml"/>
+  <!-- <arg name="map_file" default="cit_3f_map.yaml"/> -->
   <arg name="waypoints_file" default="willow_loop_waypoint_nav.yaml"/>
+  <!-- <arg name="waypoints_file" default="cit3f_way.yaml"/> -->
   <arg name="dist_err" default="0.6"/>
   <arg name="initial_pose_x" default="-9.5" />
   <arg name="initial_pose_y" default="-16.0" />
   <arg name="initial_pose_a" default="0.0" />
+  <!-- <arg name="initial_pose_x" default="-9.5" />
+  <arg name="initial_pose_y" default="29" />
+  <arg name="initial_pose_a" default="-1.57" /> -->
   <arg name="use_waypoint_nav" default="true" />
   <arg name="use_initpose" default="false" />
   <arg name="robot_x" default="1.5" />
   <arg name="robot_y" default="0.7" />
   <arg name="robot_Y" default="0.0" />
+  <!-- <arg name="robot_x" default="-10.0" />
+  <arg name="robot_y" default="28.5" />
+  <arg name="robot_Y" default="-1.57" /> -->
   <rosparam param="/nav_cloning_node/mode" subst_value="True">$(arg mode)</rosparam>
   <rosparam param="/nav_cloning_node/num" subst_value="True">$(arg num)</rosparam>
 

@@ -1,7 +1,7 @@
 waypoints:
     - point:
-        x: -7.95867
-        y: -15.9924
+        x: -7.43343
+        y: -16.0226
         z: -0.000251769
         function: run
     - point:

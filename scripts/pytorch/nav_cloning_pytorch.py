@@ -181,7 +181,7 @@ class deep_learning:
         # <test phase>
         action_value_test = self.net(x_test_ten)
 
-        print("act = ", action_value_test.item())
+        # print("act = ", action_value_test.item())
         return action_value_test.item()
 
     def result(self):

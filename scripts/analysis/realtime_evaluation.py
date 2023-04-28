@@ -74,9 +74,9 @@ class nav_cloning_node:
         self.flag = False
         self.dl.load(self.load_path + str(self.model_num) + '.pt')
         print(self.load_path + str(self.model_num) + '.pt')
-        os.makedirs(self.img_path, exist_ok=True)
-        touch_file = pathlib.Path(self.img_path + 'redpoint'+str(self.model_num)+'.csv')
-        touch_file.touch()
+        # os.makedirs(self.img_path, exist_ok=True)
+        # touch_file = pathlib.Path(self.img_path + 'redpoint'+str(self.model_num)+'.csv')
+        # touch_file.touch()
 
     def callback(self, data):
         try:
@@ -118,7 +118,7 @@ class nav_cloning_node:
     def draw_translucent_rect(self, img, x, y, w, h):
         sub_img = img[y:y+h, x:x+w]
         black_rect = np.zeros(sub_img.shape, dtype=np.uint8)
-        rect = cv2.addWeighted(sub_img, 0.3, black_rect, 0.7, 1.0)
+        rect = cv2.addWeighted(sub_img, 0.2, black_rect, 0.2, 1.0)
         img[y:y+h, x:x+w] = rect
 
     def draw_text_with_box(self, img, text, org, padding, face, height, color, thickness=1, lineType=cv2.LINE_8):
@@ -156,7 +156,7 @@ class nav_cloning_node:
 
         target_action = self.dl.act(img)
         angle_error = abs(self.action - target_action)
-        print(f'{self.episode:04}' + ", test, angular:" + f'{target_action:0.010f}' + ", angle_error:" + f'{angle_error:.015f}' + ", red point sum:" + str(self.red_count))
+        print(f'{self.episode:04}' + ", test, angle_error:" + f'{angle_error:.015f}' + ", red point sum:" + str(self.red_count) + ", yellow point sum:" + str(self.yellow_count))
         self.episode += 1
         if self.flag:
             if angle_error > self.red_threshold:

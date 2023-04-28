@@ -73,6 +73,12 @@ class nav_cloning_node:
         self.traceable_score_4 = 0
         self.traceable_score_5 = 0
         self.traceable_score_6 = 0
+        self.traceable_score_7 = 0
+        self.traceable_score_8 = 0
+        self.traceable_score_9 = 0
+        self.traceable_score_10 = 0
+        self.traceable_score_11 = 0
+        self.traceable_score_12 = 0
         self.move_count = 1
         self.dl.load(self.load_path)
         self.path_points=[]
@@ -148,6 +154,14 @@ class nav_cloning_node:
         resp.success = True
         return resp
 
+    def timer(self):
+        if self.episode == 305:
+            timer = True
+        else:
+            timer = False
+
+        return timer
+
     def collision(self):
         collision_flag = False
         self.collision_list[0].append(self.gazebo_pos_x)
@@ -159,7 +173,7 @@ class nav_cloning_node:
             self.collision_list[0] = self.collision_list[0][1:]
             self.collision_list[1] = self.collision_list[1][1:]
 
-            if distance < 0.1:
+            if distance < 0.14:
                 collision_flag = True
                 print("collision")
 
@@ -255,7 +269,6 @@ class nav_cloning_node:
             for row in csv.reader(f):
                 number += 1
                 if number == self.position_reset_count:
-                    # count, str_x, str_y, str_angle, t = row
                     str_x, str_y, str_angle = row
                     the = float(str_angle) + math.radians(self.offset_ang)
                     the = the - 2.0 * math.pi if the >  math.pi else the
@@ -266,14 +279,20 @@ class nav_cloning_node:
         return float(str_x), float(str_y), float(the)
 
     def check_traceable(self):
-        if self.min_distance <= 0.05:
-            traceable = True
+        traceable = False
+        if self.min_distance <= 0.1:
+            if self.episode > 5:
+                self.traceable_timer_num += 1
+                if self.traceable_timer_num == 20:
+                    traceable = True
+                    self.traceable_timer_num = 0
         else:
-            traceable = False
+            self.traceable_timer_num = 0
         return traceable
 
     def eval(self, traceable, angle_num):
         position = (self.position_reset_count - 1) % 7
+        # position = (self.position_reset_count - 1) % 5
         if traceable:
             angle_score = 1
         else:
@@ -283,7 +302,7 @@ class nav_cloning_node:
         if self.position_change_flag: # when the x,y position change
             self.score_list_sum.append(self.score_list)
             print("position_score: " + str(self.score_list))
-            position_score = sum(self.score_list)/5
+            position_score = sum(self.score_list)/len(self.score_list)
             print("position_score: " + str(position_score))
             if position_score == 1:
                 if position == 1:
@@ -292,12 +311,14 @@ class nav_cloning_node:
                     self.traceable_score_2 += 1
                 elif position == 3:
                     self.traceable_score_3 += 1
-                elif position == 5:
+                elif position == 4:
                     self.traceable_score_4 += 1
-                elif position == 6:
+                elif position == 5:
                     self.traceable_score_5 += 1
-                elif position == 0:
+                elif position == 6:
                     self.traceable_score_6 += 1
+                elif position == 0:
+                    self.traceable_score_7 += 1
 
             print("---traceable---")
             print(self.traceable_score_1)
@@ -306,6 +327,8 @@ class nav_cloning_node:
             print(self.traceable_score_4)
             print(self.traceable_score_5)
             print(self.traceable_score_6)
+            print(self.traceable_score_7)
+            print(self.load_path)
             print("---traceable---")
             #---------- csv write -----------------
             line = [str(self.score_list), str(position_score)]
@@ -336,6 +359,7 @@ class nav_cloning_node:
         collision_flag = False
         self.check_distance() 
         traceable = self.check_traceable() #True or False
+        # timer_flag = self.timer()
         if self.episode > 5:
             collision_flag = self.collision()
 
@@ -348,6 +372,7 @@ class nav_cloning_node:
             return
 
         if self.is_finish:
+            # if traceable or collision_flag or timer_flag:
             if traceable or collision_flag:
                 self.eval(traceable,self.angle_reset_count)
                 print("fin")
@@ -357,6 +382,7 @@ class nav_cloning_node:
                 print(self.traceable_score_4)
                 print(self.traceable_score_5)
                 print(self.traceable_score_6)
+                print(self.traceable_score_7)
 
                 line = [str(self.traceable_score_1/128), str(self.traceable_score_2/128), str(self.traceable_score_3/128), str(self.traceable_score_4/128),str(self.traceable_score_5/128),str(self.traceable_score_6/128)]
                 with open(self.path + 'result/traceable.csv', 'a') as f:
@@ -366,6 +392,7 @@ class nav_cloning_node:
                 sys.exit()
 
         else:
+            # if traceable or collision_flag or timer_flag:
             if traceable or collision_flag:
                 self.collision_list = [[],[]]
                 self.eval(traceable,self.angle_reset_count)
